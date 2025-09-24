@@ -136,3 +136,17 @@ class MetricQueries:
             spend
         FROM "LiteLLM_VerificationToken"
         """
+
+    @staticmethod
+    def get_key_spend() -> str:
+        return """
+        SELECT
+            v.key_name,
+            v.key_alias,
+            SUM(l.spend) AS total_spend
+        FROM "LiteLLM_SpendLogs" l
+        LEFT JOIN "LiteLLM_VerificationToken" v ON l.api_key = v.token
+        WHERE l."startTime" >= NOW() - INTERVAL '30 days'
+        GROUP BY v.key_name, v.key_alias
+        ORDER BY total_spend DESC
+        """

@@ -1,14 +1,17 @@
 import logging
-import psycopg2
-from psycopg2.extras import RealDictCursor
-from psycopg2 import pool
+from typing import Any, Dict, Optional
+
 import backoff
-from typing import Optional, Dict, Any
+import psycopg2
+from psycopg2 import pool
+from psycopg2.extras import RealDictCursor
+
 from ..config import DatabaseConfig
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
 
 class DatabaseConnection:
     def __init__(self, config: DatabaseConfig):
@@ -25,7 +28,7 @@ class DatabaseConnection:
                 port=self.config.port,
                 database=self.config.name,
                 user=self.config.user,
-                password=self.config.password
+                password=self.config.password,
             )
             logger.info("Database connection pool created successfully")
         except Exception as e:
@@ -33,7 +36,9 @@ class DatabaseConnection:
             raise
 
     @backoff.on_exception(backoff.expo, Exception, max_tries=5)
-    def execute_query(self, query: str, params: Optional[Dict[str, Any]] = None) -> list:
+    def execute_query(
+        self, query: str, params: Optional[Dict[str, Any]] = None
+    ) -> list:
         conn = None
         cur = None
         try:
