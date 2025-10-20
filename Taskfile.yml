@@ -1,0 +1,42 @@
+version: '3'
+
+vars:
+  IMAGE_NAME: litellm-exporter:local
+
+tasks:
+  build:
+    desc: Build the Docker image for local development
+    cmds:
+      - docker build -t {{.IMAGE_NAME}} .
+
+  clean:
+    desc: Remove the local Docker image
+    cmds:
+      - docker rmi {{.IMAGE_NAME}} || true
+
+  uv-venv:
+    desc: Create or update local virtual env with uv
+    cmds:
+      - uv venv
+
+  uv-sync:
+    desc: Sync dependencies from pyproject using uv
+    deps: [uv-venv]
+    cmds:
+      - uv sync --dev
+
+  uv-lock:
+    desc: Update lockfile using uv
+    cmds:
+      - uv lock
+
+  test:
+    desc: Run tests with uv (local)
+    deps: [uv-sync]
+    cmds:
+      - uv run pytest -q
+
+  test-e2e:
+    desc: Run end-to-end tests (requires Docker)
+    cmds:
+      - uv run pytest -q -k e2e
