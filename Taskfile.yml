@@ -1,13 +1,22 @@
-version: '3'
+version: "3"
 
 vars:
   IMAGE_NAME: litellm-exporter:local
+  DOCKER_COMPOSE: ./tests/docker-compose-e2e.yml
 
 tasks:
   build:
     desc: Build the Docker image for local development
     cmds:
       - docker build -t {{.IMAGE_NAME}} .
+
+  start:
+    desc: Start hole stack to play with litellm-expoter
+    cmds:
+      - docker compose -f {{.DOCKER_COMPOSE}} up -d
+
+  stop:
+    - docker compose -f {{.DOCKER_COMPOSE}} down --remove-orphans
 
   clean:
     desc: Remove the local Docker image
@@ -16,14 +25,16 @@ tasks:
 
   uv-venv:
     desc: Create or update local virtual env with uv
+    run: once
     cmds:
       - uv venv
 
   uv-sync:
     desc: Sync dependencies from pyproject using uv
     deps: [uv-venv]
+    run: once
     cmds:
-      - uv sync --dev
+      - uv sync --group dev
 
   uv-lock:
     desc: Update lockfile using uv
@@ -31,12 +42,31 @@ tasks:
       - uv lock
 
   test:
-    desc: Run tests with uv (local)
+    desc: Run tests
     deps: [uv-sync]
     cmds:
-      - uv run pytest -q
+      - uv run pytest
 
-  test-e2e:
-    desc: Run end-to-end tests (requires Docker)
+  md-lint:
+    desc: Lint Markdown files with PyMarkdown
+    deps: [uv-sync]
     cmds:
-      - uv run pytest -q -k e2e
+      - uv run pymarkdown scan .
+
+  py-lint:
+    desc: Lint Python files with Ruff
+    deps: [uv-sync]
+    cmds:
+      - uv run ruff check .
+
+  lint:
+    desc: Run all linters
+    deps: [md-lint, py-lint]
+    cmds:
+      - echo "All linters passed"
+
+  ci:
+    desc: Run CI suite (lint, tests)
+    cmds:
+      - task: lint
+      - task: test

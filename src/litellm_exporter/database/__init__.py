@@ -3,7 +3,6 @@ from typing import Any, Dict, Optional
 
 import backoff
 import psycopg2
-from psycopg2 import pool
 from psycopg2.extras import RealDictCursor
 
 from ..config import DatabaseConfig
