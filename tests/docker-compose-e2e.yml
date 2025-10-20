@@ -1,0 +1,79 @@
+services:
+  #############################################################################
+  # LiteLLM Exporter
+  #############################################################################
+  exporter:
+    build:
+      context: ..
+    restart: always
+    ports:
+      - "9090:9090"
+    environment:
+      - LITELLM_DB_HOST=litellm_db
+      - LITELLM_DB_PORT=5432
+      - LITELLM_DB_NAME=litellm
+      - LITELLM_DB_USER=litellm
+      - LITELLM_DB_PASSWORD=litellm
+      - DB_MIN_CONNECTIONS=1
+      - DB_MAX_CONNECTIONS=10
+      - METRICS_UPDATE_INTERVAL=15
+      - METRICS_SPEND_WINDOW=30d
+      - METRICS_REQUEST_WINDOW=24h
+      - METRICS_ERROR_WINDOW=1h
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9090"]
+      interval: 30s
+      timeout: 30s
+      retries: 3
+      start_period: 5s
+    depends_on:
+      - db
+      - litellm
+
+  #############################################################################
+  # LiteLLM
+  #############################################################################
+  litellm:
+    image: ghcr.io/berriai/litellm:main-stable
+    ports:
+      - "4000:4000"
+    environment:
+      DATABASE_URL: "postgresql://litellm:litellm@db:5432/litellm"
+      STORE_MODEL_IN_DB: "false"
+      LITELLM_MASTER_KEY: dummy-key
+      LITELLM_SALT_KEY: V3rySecretSaltKey
+      OPENAI_API_KEY: sk-mock-key
+    depends_on:
+      - db
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 http://localhost:4000/health/liveliness || exit 1",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    volumes:
+      - ./litellm-config.yaml:/app/config.yaml
+    command:
+      - "--config=/app/config.yaml"
+  #############################################################################
+  # Database
+  #############################################################################
+  db:
+    image: postgres:16
+    restart: always
+    container_name: litellm_db
+    environment:
+      POSTGRES_DB: litellm
+      POSTGRES_USER: litellm
+      POSTGRES_PASSWORD: litellm
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d litellm -U litellm"]
+      interval: 1s
+      timeout: 5s
+      retries: 10
