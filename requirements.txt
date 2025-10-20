@@ -1,3 +1,0 @@
-prometheus_client==0.17.1
-psycopg2-binary==2.9.9
-backoff==2.2.1

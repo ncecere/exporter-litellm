@@ -15,9 +15,12 @@ ENV TINI_VERSION=v0.19.0
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-${TARGETARCH} /tini
 RUN chmod +x /tini
 
-# Copy requirements first to leverage Docker cache
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Install uv and dependencies
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+ENV PATH="/root/.local/bin:${PATH}"
+COPY pyproject.toml ./
+RUN uv sync --no-dev
+ENV PATH="/app/.venv/bin:${PATH}"
 
 # Copy application code
 COPY src/litellm_exporter/ /app/litellm_exporter/
