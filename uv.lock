@@ -445,7 +445,7 @@ wheels = [
 
 [[package]]
 name = "litellm-exporter"
-source = { editable = "." }
+source = { virtual = "." }
 dependencies = [
     { name = "backoff" },
     { name = "prometheus-client" },

@@ -1,0 +1,23 @@
+name: Run CI tests
+
+on:
+  pull_request:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: ⬇️ Checkout
+        uses: actions/checkout@v4
+
+      - name: 🔧 Set up Taskfile
+        uses: go-task/setup-task@v1
+
+      - name: 🔧 Setup uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: 🐍 Install Python
+        run: uv python install
+
+      - name: 🚀 Run CI task
+        run: task ci
